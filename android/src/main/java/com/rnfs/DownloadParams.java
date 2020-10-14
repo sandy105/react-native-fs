@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.*;
 
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 
 public class DownloadParams {
@@ -29,4 +30,5 @@ public class DownloadParams {
   public OnTaskCompleted onTaskCompleted;
   public OnDownloadBegin onDownloadBegin;
   public OnDownloadProgress onDownloadProgress;
+  public ReadableArray certs;
 }

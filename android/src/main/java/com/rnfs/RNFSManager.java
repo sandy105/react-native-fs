@@ -9,6 +9,7 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.util.Log;
 import android.util.SparseArray;
 import android.media.MediaScannerConnection;
 
@@ -695,6 +696,8 @@ public class RNFSManager extends ReactContextBaseJavaModule {
   @ReactMethod
   public void downloadFile(final ReadableMap options, final Promise promise) {
     try {
+      DownloadParams params = new DownloadParams();
+
       File file = new File(options.getString("toFile"));
       URL url = new URL(options.getString("fromUrl"));
       final int jobId = options.getInt("jobId");
@@ -705,9 +708,9 @@ public class RNFSManager extends ReactContextBaseJavaModule {
       int connectionTimeout = options.getInt("connectionTimeout");
       boolean hasBeginCallback = options.getBoolean("hasBeginCallback");
       boolean hasProgressCallback = options.getBoolean("hasProgressCallback");
-
-      DownloadParams params = new DownloadParams();
-
+      if (options.hasKey("certs")) {
+        params.certs = options.getArray("certs");
+      }
       params.src = url;
       params.dest = file;
       params.headers = headers;
@@ -799,6 +802,7 @@ public class RNFSManager extends ReactContextBaseJavaModule {
       boolean binaryStreamOnly = options.getBoolean("binaryStreamOnly");
       boolean hasBeginCallback = options.getBoolean("hasBeginCallback");
       boolean hasProgressCallback = options.getBoolean("hasProgressCallback");
+
 
       ArrayList<ReadableMap> fileList = new ArrayList<>();
       UploadParams params = new UploadParams();
