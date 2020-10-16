@@ -12,6 +12,7 @@ import java.security.cert.CertificateFactory;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import android.net.Uri;
 import android.util.Log;
 
 import android.os.AsyncTask;
@@ -50,12 +51,12 @@ public class Downloader extends AsyncTask<DownloadParams, long[], DownloadResult
 
   private void download(DownloadParams param, DownloadResult res) throws Exception {
     if (param.src.getProtocol().toLowerCase().equals("https")) {
-      downloadWithHttps(param,res);
+      downloadWithHttps(null,param,res);
     } else {
       downloadWithHttp(param,res);
     }
   }
-  private void downloadWithHttps(DownloadParams param, DownloadResult res) throws Exception {
+  private void downloadWithHttps(URL redirectUrl , DownloadParams param, DownloadResult res) throws Exception {
     InputStream input = null;
     OutputStream output = null;
     HttpsURLConnection connection = null;
@@ -93,7 +94,12 @@ public class Downloader extends AsyncTask<DownloadParams, long[], DownloadResult
     }
 
     try {
-      connection = (HttpsURLConnection)param.src.openConnection();
+      if (redirectUrl != null) {
+        connection = (HttpsURLConnection) redirectUrl.openConnection();
+
+      } else {
+        connection = (HttpsURLConnection) param.src.openConnection();
+      }
       connection.setHostnameVerifier(new HostnameVerifier() {
         @Override
         public boolean verify(String hostname, SSLSession session) {
@@ -243,13 +249,17 @@ public class Downloader extends AsyncTask<DownloadParams, long[], DownloadResult
       if (isRedirect) {
         String redirectURL = connection.getHeaderField("Location");
         connection.disconnect();
+        if (redirectURL.contains("https")){
+          downloadWithHttps(new URL(redirectURL),param, res);
+          return;
+        } else {
+          connection = (HttpURLConnection) new URL(redirectURL).openConnection();
+          connection.setConnectTimeout(5000);
+          connection.connect();
 
-        connection = (HttpURLConnection) new URL(redirectURL).openConnection();
-        connection.setConnectTimeout(5000);
-        connection.connect();
-
-        statusCode = connection.getResponseCode();
-        lengthOfFile = getContentLength(connection);
+          statusCode = connection.getResponseCode();
+          lengthOfFile = getContentLength(connection);
+        }
       }
       if(statusCode >= 200 && statusCode < 300) {
         Map<String, List<String>> headers = connection.getHeaderFields();
